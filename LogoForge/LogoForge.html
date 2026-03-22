@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogoForge — AI Logo Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #222222;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #666666;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .logo-mark span { color: var(--accent); }
+
+  .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: 1px solid rgba(232,255,71,0.3);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    background: rgba(232,255,71,0.05);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(64px, 10vw, 120px);
+    line-height: 0.95;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #f0f0f0 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  h1 .highlight {
+    background: linear-gradient(135deg, var(--accent) 0%, #b8ff00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.3px;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px;
+    margin-bottom: 40px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input, textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 12px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: rgba(232,255,71,0.5);
+    box-shadow: 0 0 0 3px rgba(232,255,71,0.07);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* Style pills */
+  .style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .style-pill input[type="radio"] { display: none; }
+
+  .style-pill label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .style-pill label .emoji { font-size: 22px; }
+
+  .style-pill input:checked + label {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,255,71,0.06);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .style-pill label:hover {
+    border-color: #444;
+    color: var(--text);
+  }
+
+  /* Color palette */
+  .color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    align-items: center;
+  }
+
+  .color-chip input[type="radio"] { display: none; }
+
+  .color-chip label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .color-chip .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .color-chip input:checked + label {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(232,255,71,0.06);
+  }
+
+  /* Custom hex wheel picker */
+  .custom-chip input:checked + label {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(232,255,71,0.06);
+  }
+
+  .custom-pickers {
+    display: none;
+    margin-top: 16px;
+    padding: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    animation: fadeIn 0.2s ease;
+  }
+  .custom-pickers.visible { display: block; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+  .pickers-layout {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* Hex wheel canvas */
+  .hex-wheel-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  #hexWheelCanvas {
+    display: block;
+    cursor: crosshair;
+    border-radius: 50%;
+  }
+
+  /* Slot selectors */
+  .slot-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .slot-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.18s;
+    user-select: none;
+  }
+  .slot-tab.active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(232,255,71,0.07);
+  }
+  .slot-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    transition: background 0.2s;
+  }
+
+  /* Selected color preview + hex input */
+  .color-info {
+    margin-top: 4px;
+  }
+
+  .selected-swatch {
+    width: 100%;
+    height: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    transition: background 0.1s;
+  }
+
+  .hex-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hex-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .color-hex {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    outline: none;
+    width: 100px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+  }
+  .color-hex:focus { border-color: rgba(232,255,71,0.5); }
+
+  .brightness-wrap {
+    margin-top: 12px;
+  }
+  .brightness-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .brightness-track {
+    position: relative;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  #brightnessSlider {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    margin: 0;
+  }
+  .brightness-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 7px;
+    pointer-events: none;
+  }
+  .brightness-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    pointer-events: none;
+    transition: left 0.05s;
+  }
+
+  .picker-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+    margin-top: 14px;
+  }
+
+  .picker-right {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  /* Custom color picker */
+  .custom-palette-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .custom-palette-wrap.active {
+    border-color: rgba(232,255,71,0.4);
+  }
+
+  .custom-palette-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .color-pickers-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .color-picker-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .color-picker-field span {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .color-swatch-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    overflow: hidden;
+  }
+
+  .color-swatch-btn:hover {
+    border-color: #555;
+    transform: scale(1.08);
+  }
+
+  .color-swatch-btn input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    appearance: none;
+  }
+
+  .color-swatch-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 6px;
+  }
+
+  .color-hex-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .custom-palette-preview {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    align-items: center;
+  }
+
+  .preview-swatch {
+    height: 6px;
+    border-radius: 3px;
+    flex: 1;
+    transition: background 0.2s;
+  }
+
+  .use-custom-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  .use-custom-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .use-custom-btn.active {
+    background: rgba(232,255,71,0.08);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Generate button */
+  .btn-generate {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .btn-generate:hover { background: #d4eb3a; transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-icon { font-size: 20px; }
+
+  /* Output */
+  .output-section {
+    display: none;
+  }
+
+  .output-section.visible { display: block; }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .output-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .btn-regen {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .btn-regen:hover { border-color: var(--accent); color: var(--accent); }
+
+  .logos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .logo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+
+  .logo-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .logo-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+  .logo-preview {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--surface2);
+  }
+
+  .logo-preview svg {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .logo-card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo-variant-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .btn-select {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .logo-card.selected .btn-select {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  /* Design brief */
+  .design-brief {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .brief-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .brief-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* Loading */
+  .loading-overlay {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    gap: 20px;
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .spinner {
+    width: 44px; height: 44px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .loading-sub {
+    font-size: 13px;
+    color: var(--muted);
+    opacity: 0.6;
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+  }
+
+  /* Download bar */
+  .download-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .btn-download {
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+  }
+
+  .btn-download:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-download.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+  .btn-download.primary:hover { background: #d4eb3a; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    header { padding: 16px 20px; }
+    main { padding: 40px 20px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-card { padding: 24px; }
+    .logos-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">Logo<span>Forge</span></div>
+  <div class="badge">Powered by Claude AI</div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-tag">✦ AI-Powered Design</div>
+    <h1>Build Your<br><span class="highlight">Brand Mark</span></h1>
+    <p class="subtitle">Describe your brand and let AI generate professional logo concepts in seconds.</p>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="field">
+        <label>Brand / Company Name</label>
+        <input type="text" id="brandName" placeholder="e.g. Apex Labs" />
+      </div>
+      <div class="field">
+        <label>Industry / Category</label>
+        <input type="text" id="industry" placeholder="e.g. Fintech, Health, Gaming" />
+      </div>
+      <div class="field full">
+        <label>Brand Description</label>
+        <textarea id="description" placeholder="What does your brand do? What feeling should it evoke? (e.g. A futuristic AI startup focused on sustainable energy — bold, innovative, trustworthy)"></textarea>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:20px">
+      <label>Logo Style</label>
+      <div class="style-grid">
+        <div class="style-pill">
+          <input type="radio" name="style" id="s1" value="Minimalist" checked>
+          <label for="s1"><span class="emoji">◻</span> Minimalist</label>
+        </div>
+        <div class="style-pill">
+          <input type="radio" name="style" id="s2" value="Bold & Geometric">
+          <label for="s2"><span class="emoji">⬡</span> Geometric</label>
+        </div>
+        <div class="style-pill">
+          <input type="radio" name="style" id="s3" value="Retro / Vintage">
+          <label for="s3"><span class="emoji">✦</span> Retro</label>
+        </div>
+        <div class="style-pill">
+          <input type="radio" name="style" id="s4" value="Futuristic / Tech">
+          <label for="s4"><span class="emoji">◈</span> Futuristic</label>
+        </div>
+        <div class="style-pill">
+          <input type="radio" name="style" id="s5" value="Playful / Friendly">
+          <label for="s5"><span class="emoji">◉</span> Playful</label>
+        </div>
+        <div class="style-pill">
+          <input type="radio" name="style" id="s6" value="Luxury / Premium">
+          <label for="s6"><span class="emoji">◇</span> Luxury</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Color Palette</label>
+      <div class="color-row">
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c1" value="Dark & Bold (#0a0a0a, #e8ff47, #ffffff)" checked>
+          <label for="c1"><span class="dot" style="background:#e8ff47"></span> Electric</label>
+        </div>
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c2" value="Ocean Blue (#0f2b5b, #4a9eff, #ffffff)">
+          <label for="c2"><span class="dot" style="background:#4a9eff"></span> Ocean</label>
+        </div>
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c3" value="Fire & Energy (#1a0a00, #ff6b35, #ffcc00)">
+          <label for="c3"><span class="dot" style="background:#ff6b35"></span> Fire</label>
+        </div>
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c4" value="Forest & Nature (#0d1f0d, #4caf50, #a8d5a2)">
+          <label for="c4"><span class="dot" style="background:#4caf50"></span> Nature</label>
+        </div>
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c5" value="Monochrome (#000000, #444444, #ffffff)">
+          <label for="c5"><span class="dot" style="background:linear-gradient(135deg,#000,#fff)" style="background:#888"></span> Mono</label>
+        </div>
+        <div class="color-chip">
+          <input type="radio" name="palette" id="c6" value="Purple & Gold (#1a0033, #8b5cf6, #f59e0b)">
+          <label for="c6"><span class="dot" style="background:#8b5cf6"></span> Royal</label>
+        </div>
+        <div class="color-chip custom-chip">
+          <input type="radio" name="palette" id="c7" value="custom" onchange="toggleCustomPickers()">
+          <label for="c7">
+            <span id="dot1" class="dot" style="background:#ff4d6d"></span>
+            <span id="dot2" class="dot" style="background:#4361ee"></span>
+            <span id="dot3" class="dot" style="background:#f8f9fa; outline:1px solid #444"></span>
+            Custom
+          </label>
+        </div>
+      </div>
+
+      <div class="custom-pickers" id="customPickers">
+        <div class="pickers-layout">
+          <!-- Hex Wheel -->
+          <div class="hex-wheel-wrap">
+            <canvas id="hexWheelCanvas" width="200" height="200"></canvas>
+          </div>
+          <!-- Right panel -->
+          <div class="picker-right">
+            <!-- Slot tabs -->
+            <div class="slot-tabs">
+              <div class="slot-tab active" data-slot="0" onclick="setActiveSlot(0)">
+                <span class="slot-dot" id="slotDot0" style="background:#ff4d6d"></span> Primary
+              </div>
+              <div class="slot-tab" data-slot="1" onclick="setActiveSlot(1)">
+                <span class="slot-dot" id="slotDot1" style="background:#4361ee"></span> Secondary
+              </div>
+              <div class="slot-tab" data-slot="2" onclick="setActiveSlot(2)">
+                <span class="slot-dot" id="slotDot2" style="background:#f8f9fa; outline:1px solid #333"></span> Background
+              </div>
+            </div>
+
+            <!-- Swatch + hex -->
+            <div class="color-info">
+              <div class="selected-swatch" id="selectedSwatch" style="background:#ff4d6d"></div>
+              <div class="hex-input-row">
+                <span class="hex-label">HEX</span>
+                <input type="text" class="color-hex" id="hexInput" value="#FF4D6D" maxlength="7" oninput="onHexType()">
+              </div>
+            </div>
+
+            <!-- Brightness slider -->
+            <div class="brightness-wrap">
+              <span class="brightness-label">Brightness</span>
+              <div class="brightness-track" id="brightnessTrack">
+                <input type="range" id="brightnessSlider" min="0" max="100" value="85" oninput="onBrightness()">
+                <div class="brightness-fill" id="brightnessFill"></div>
+                <div class="brightness-thumb" id="brightnessThumb" style="left:85%"></div>
+              </div>
+            </div>
+
+            <div class="picker-hint">Click the wheel to pick a color.<br>Use tabs to switch between slots.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateLogos()">
+      <span class="btn-icon">⚡</span> GENERATE LOGOS
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">GENERATING YOUR LOGOS</div>
+    <div class="loading-sub">Claude is designing 3 unique logo concepts for your brand…</div>
+  </div>
+
+  <!-- Output -->
+  <div class="output-section" id="outputSection">
+    <div class="output-header">
+      <div class="output-title">✦ Generated Concepts</div>
+      <button class="btn-regen" onclick="generateLogos()">↻ Regenerate</button>
+    </div>
+
+    <div class="design-brief" id="designBrief">
+      <div class="brief-title">Design Brief</div>
+      <div class="brief-text" id="briefText"></div>
+    </div>
+
+    <div class="logos-grid" id="logosGrid"></div>
+
+    <div class="download-bar" id="downloadBar">
+      <button class="btn-download primary" onclick="downloadSelected()">↓ Download SVG</button>
+      <button class="btn-download" onclick="copySelected()">⧉ Copy SVG Code</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ─── Hex Wheel Picker Engine ──────────────────────────────────────────────────
+const HEX_ROWS = [7,8,9,10,11,10,9,8,7];
+const HEX_R = 10;
+const HEX_GAP = 1.4;
+const SLOT_COLORS = ['#FF4D6D','#4361EE','#F8F9FA'];
+let activeSlot = 0;
+let brightness = [0.75, 0.65, 0.97];
+let hexCells = [];
+let wheelReady = false;
+
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r,g,b) {
+  return '#'+[r,g,b].map(x=>Math.round(Math.max(0,Math.min(255,x))).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function hslToRgb(h,s,l) {
+  h/=360; s/=100; l/=100;
+  const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+  const f=(t)=>{t=(t%1+1)%1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+  return [Math.round(f(h+1/3)*255),Math.round(f(h)*255),Math.round(f(h-1/3)*255)];
+}
+function rgbToHsl(r,g,b) {
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2;
+  if(max===min) return [0,0,l*100];
+  const d=max-min,s=l>.5?d/(2-max-min):d/(max+min);
+  let h=max===r?(g-b)/d+(g<b?6:0):max===g?(b-r)/d+2:(r-g)/d+4;
+  return [h/6*360,s*100,l*100];
+}
+
+function drawHexWheel() {
+  const canvas = document.getElementById('hexWheelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cxc = W/2, cyc = H/2;
+  ctx.clearRect(0,0,W,H);
+  hexCells = [];
+
+  const midRow = Math.floor(HEX_ROWS.length/2);
+  const colStep = HEX_R * 2 * 0.866 + HEX_GAP;
+  const rowStep = HEX_R * Math.sqrt(3) * 0.5 + HEX_GAP * 0.5;
+  const maxCols = HEX_ROWS[midRow];
+
+  for (let row = 0; row < HEX_ROWS.length; row++) {
+    const cols = HEX_ROWS[row];
+    const rowX = cxc - ((cols - 1) / 2) * colStep;
+    const rowY = cyc + (row - midRow) * rowStep * 2;
+
+    for (let col = 0; col < cols; col++) {
+      const px = rowX + col * colStep;
+      const py = rowY;
+
+      const dx = px - cxc, dy = py - cyc;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const maxDist = (maxCols / 2) * colStep;
+      const hue = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+      const sat = Math.min(100, (dist / maxDist) * 115);
+      const bri = brightness[activeSlot];
+      const L = sat < 5 ? 90 * bri + 10 : (20 + 55 * bri);
+
+      const [r,g,b] = hslToRgb(hue, sat, Math.max(5, Math.min(97, L)));
+      const color = rgbToHex(r,g,b);
+
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI/180 * (60*i - 30);
+        const hx = px + (HEX_R - 0.6) * Math.cos(a);
+        const hy = py + (HEX_R - 0.6) * Math.sin(a);
+        i === 0 ? ctx.moveTo(hx,hy) : ctx.lineTo(hx,hy);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      hexCells.push({cx:px, cy:py, color});
+    }
+  }
+
+  // Draw selection rings for each slot
+  SLOT_COLORS.forEach((sc, si) => {
+    const cell = findClosestCell(sc);
+    if (!cell) return;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI/180 * (60*i - 30);
+      const hx = cell.cx + (HEX_R + 1.5) * Math.cos(a);
+      const hy = cell.cy + (HEX_R + 1.5) * Math.sin(a);
+      i === 0 ? ctx.moveTo(hx,hy) : ctx.lineTo(hx,hy);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = si === activeSlot ? '#fff' : 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = si === activeSlot ? 2.5 : 1.5;
+    ctx.stroke();
+  });
+
+  wheelReady = true;
+}
+
+function findClosestCell(hex) {
+  const [tr,tg,tb] = hexToRgb(hex);
+  let best = null, bestD = Infinity;
+  for (const c of hexCells) {
+    const [r,g,b] = hexToRgb(c.color);
+    const d = (r-tr)**2+(g-tg)**2+(b-tb)**2;
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  return best;
+}
+
+function pickFromWheel(clientX, clientY) {
+  const canvas = document.getElementById('hexWheelCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const px = (clientX - rect.left) * (canvas.width / rect.width);
+  const py = (clientY - rect.top) * (canvas.height / rect.height);
+  let best = null, bestD = Infinity;
+  for (const c of hexCells) {
+    const d = (c.cx-px)**2+(c.cy-py)**2;
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  if (best && bestD < (HEX_R * 3)**2) applyColor(best.color);
+}
+
+function applyColor(hex) {
+  SLOT_COLORS[activeSlot] = hex;
+  document.getElementById('dot'+(activeSlot+1)).style.background = hex;
+  document.getElementById('slotDot'+activeSlot).style.background = hex;
+  document.getElementById('selectedSwatch').style.background = hex;
+  document.getElementById('hexInput').value = hex.toUpperCase();
+  const [r,g,b] = hexToRgb(hex);
+  const [,,l] = rgbToHsl(r,g,b);
+  brightness[activeSlot] = Math.max(0.05, Math.min(1, l/100));
+  updateBrightnessUI();
+  drawHexWheel();
+}
+
+function setActiveSlot(idx) {
+  activeSlot = idx;
+  document.querySelectorAll('.slot-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  const col = SLOT_COLORS[idx];
+  document.getElementById('selectedSwatch').style.background = col;
+  document.getElementById('hexInput').value = col.toUpperCase();
+  const [r,g,b] = hexToRgb(col);
+  const [,,l] = rgbToHsl(r,g,b);
+  brightness[idx] = Math.max(0.05, Math.min(1, l/100));
+  updateBrightnessUI();
+  drawHexWheel();
+}
+
+function onHexType() {
+  const v = document.getElementById('hexInput').value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) applyColor(v.toUpperCase());
+}
+
+function onBrightness() {
+  const v = parseInt(document.getElementById('brightnessSlider').value) / 100;
+  brightness[activeSlot] = v;
+  const hex = SLOT_COLORS[activeSlot];
+  const [r,g,b] = hexToRgb(hex);
+  const [h,s] = rgbToHsl(r,g,b);
+  const newL = v * 88 + 5;
+  const [nr,ng,nb] = hslToRgb(h, s, Math.max(5, Math.min(97, newL)));
+  const newHex = rgbToHex(nr,ng,nb);
+  SLOT_COLORS[activeSlot] = newHex;
+  document.getElementById('dot'+(activeSlot+1)).style.background = newHex;
+  document.getElementById('slotDot'+activeSlot).style.background = newHex;
+  document.getElementById('selectedSwatch').style.background = newHex;
+  document.getElementById('hexInput').value = newHex;
+  updateBrightnessUI();
+  drawHexWheel();
+}
+
+function updateBrightnessUI() {
+  const v = brightness[activeSlot];
+  const pct = v * 100;
+  document.getElementById('brightnessSlider').value = pct;
+  document.getElementById('brightnessThumb').style.left = pct + '%';
+  const col = SLOT_COLORS[activeSlot];
+  document.getElementById('brightnessFill').style.background =
+    `linear-gradient(to right, #000 0%, ${col} ${pct}%, #fff 100%)`;
+}
+
+function initHexWheel() {
+  drawHexWheel();
+  updateBrightnessUI();
+  const canvas = document.getElementById('hexWheelCanvas');
+  let down = false;
+  canvas.addEventListener('mousedown', e => { down=true; pickFromWheel(e.clientX,e.clientY); });
+  canvas.addEventListener('mousemove', e => { if(down) pickFromWheel(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', () => down=false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); pickFromWheel(e.touches[0].clientX,e.touches[0].clientY); }, {passive:false});
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); pickFromWheel(e.touches[0].clientX,e.touches[0].clientY); }, {passive:false});
+}
+
+// ─── Panel toggle ─────────────────────────────────────────────────────────────
+function toggleCustomPickers() {
+  const pickers = document.getElementById('customPickers');
+  const isCustom = document.getElementById('c7').checked;
+  pickers.classList.toggle('visible', isCustom);
+  if (isCustom && !wheelReady) setTimeout(initHexWheel, 40);
+}
+
+document.querySelectorAll('input[name="palette"]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (r.id !== 'c7') document.getElementById('customPickers').classList.remove('visible');
+  });
+});
+
+function getCustomPalette() {
+  return `Custom (Primary: ${SLOT_COLORS[0]}, Secondary: ${SLOT_COLORS[1]}, Background: ${SLOT_COLORS[2]})`;
+}
+
+// ─── Logo generation ──────────────────────────────────────────────────────────
+let selectedCard = 0;
+let generatedLogos = [];
+
+async function generateLogos() {
+  const name = document.getElementById('brandName').value.trim() || 'MyBrand';
+  const industry = document.getElementById('industry').value.trim() || 'Technology';
+  const desc = document.getElementById('description').value.trim() || 'A modern, innovative company';
+  const style = document.querySelector('input[name="style"]:checked').value;
+  const paletteRaw = document.querySelector('input[name="palette"]:checked').value;
+  const palette = paletteRaw === 'custom' ? getCustomPalette() : paletteRaw;
+
+  document.getElementById('generateBtn').disabled = true;
+  document.getElementById('outputSection').classList.remove('visible');
+  document.getElementById('loadingOverlay').classList.add('active');
+
+  const prompt = `You are a professional logo designer. Create 3 distinct SVG logo concepts for a brand.
+
+Brand Name: "${name}"
+Industry: "${industry}"
+Description: "${desc}"
+Style: ${style}
+Color Palette: ${palette}
+
+Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
+{
+  "brief": "One paragraph design brief explaining the creative direction (2-3 sentences)",
+  "logos": [
+    {
+      "variant": "Wordmark",
+      "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 150'>...complete SVG here...</svg>"
+    },
+    {
+      "variant": "Icon + Text",
+      "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 150'>...complete SVG here...</svg>"
+    },
+    {
+      "variant": "Emblem",
+      "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 150'>...complete SVG here...</svg>"
+    }
+  ]
+}
+
+SVG RULES:
+- Each SVG must be self-contained, 300x150 viewBox, fully valid SVG
+- Use the color palette provided creatively
+- Make each variant genuinely different in composition
+- Use SVG text elements with appropriate font-family (serif, sans-serif, monospace)
+- Include shapes, paths, and design elements appropriate for the style
+- Wordmark: creative typography-focused logo
+- Icon + Text: a symbol/mark alongside the brand name
+- Emblem: enclosed badge or seal-style mark
+- Make them look professional and memorable
+- Do NOT use external images or fonts
+- Background should be transparent (no rect fill covering whole viewBox) or use a dark/contrasting bg that matches palette`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    generatedLogos = parsed.logos;
+    selectedCard = 0;
+
+    document.getElementById('briefText').textContent = parsed.brief;
+    renderLogos(parsed.logos);
+
+    document.getElementById('outputSection').classList.add('visible');
+  } catch(err) {
+    alert('Error generating logos. Please check your API key or try again.\n\n' + err.message);
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('active');
+    document.getElementById('generateBtn').disabled = false;
+  }
+}
+
+function renderLogos(logos) {
+  const grid = document.getElementById('logosGrid');
+  grid.innerHTML = '';
+
+  logos.forEach((logo, i) => {
+    const card = document.createElement('div');
+    card.className = 'logo-card' + (i === 0 ? ' selected' : '');
+    card.onclick = () => selectCard(i);
+
+    card.innerHTML = `
+      <div class="logo-preview">${logo.svg}</div>
+      <div class="logo-card-footer">
+        <span class="logo-variant-label">${logo.variant}</span>
+        <button class="btn-select" onclick="selectCard(${i})">${i === 0 ? '✓ SELECTED' : 'SELECT'}</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectCard(idx) {
+  selectedCard = idx;
+  document.querySelectorAll('.logo-card').forEach((c, i) => {
+    c.classList.toggle('selected', i === idx);
+    c.querySelector('.btn-select').textContent = i === idx ? '✓ SELECTED' : 'SELECT';
+  });
+}
+
+function downloadSelected() {
+  if (!generatedLogos.length) return;
+  const svg = generatedLogos[selectedCard].svg;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = document.getElementById('brandName').value.trim() || 'logo';
+  a.href = url;
+  a.download = `${name.toLowerCase().replace(/\s+/g,'-')}-${generatedLogos[selectedCard].variant.toLowerCase().replace(/\s+/g,'-')}.svg`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copySelected() {
+  if (!generatedLogos.length) return;
+  navigator.clipboard.writeText(generatedLogos[selectedCard].svg)
+    .then(() => {
+      const btn = document.querySelector('.download-bar button:last-child');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = '⧉ Copy SVG Code', 2000);
+    });
+}
+</script>
+</body>
+</html>
